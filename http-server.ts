@@ -391,20 +391,69 @@ function readerFromConnLength(
 // a sample request handler
 async function handleReq(req: HTTPReq, body: BodyReader): Promise<HTTPRes> {
     // act on the request URI
+    const uri = req.uri.toString('latin1');
     let resp: BodyReader;
-    switch (req.uri.toString('latin1')) {
+    let headers: Buffer[] = [
+        Buffer.from('Server: my_first_http_server'),
+        Buffer.from('Access-Control-Allow-Origin: *'),
+        Buffer.from('Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS'),
+        Buffer.from('Access-Control-Allow-Headers: Content-Type, X-Custom-Header')
+    ];
+    
+    // Handle CORS preflight requests
+    if (req.method === 'OPTIONS') {
+        resp = readerFromMemory(Buffer.from(''));
+        return {
+            code: 204,
+            headers: headers,
+            body: resp,
+        };
+    }
+    
+    switch (uri) {
+    case '/':
+        // Serve the demo webpage
+        try {
+            const fs = require('fs');
+            const path = require('path');
+            const htmlPath = path.join(__dirname, 'public', 'index.html');
+            const htmlContent = fs.readFileSync(htmlPath);
+            headers.push(Buffer.from('Content-Type: text/html; charset=utf-8'));
+            resp = readerFromMemory(htmlContent);
+        } catch (error) {
+            // Fallback if HTML file doesn't exist
+            const fallbackHtml = `
+<!DOCTYPE html>
+<html>
+<head><title>HTTP Server Demo</title></head>
+<body>
+    <h1>HTTP Server from Scratch</h1>
+    <p>Server is running! The demo page should be at <code>public/index.html</code></p>
+    <p>Try these endpoints:</p>
+    <ul>
+        <li><a href="/echo">/echo</a> - Echo server (POST data)</li>
+        <li><a href="/test">/test</a> - Default response</li>
+    </ul>
+</body>
+</html>`;
+            headers.push(Buffer.from('Content-Type: text/html; charset=utf-8'));
+            resp = readerFromMemory(Buffer.from(fallbackHtml));
+        }
+        break;
     case '/echo':
         // http echo server
         resp = body;
+        headers.push(Buffer.from('Content-Type: text/plain; charset=utf-8'));
         break;
     default:
         resp = readerFromMemory(Buffer.from('hello world.\n'));
+        headers.push(Buffer.from('Content-Type: text/plain; charset=utf-8'));
         break;
     }
 
     return {
         code: 200,
-        headers: [Buffer.from('Server: my_first_http_server')],
+        headers: headers,
         body: resp,
     };
 }

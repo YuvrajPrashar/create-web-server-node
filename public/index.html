@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HTTP Server from Scratch - Demo</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+        color: white;
+        padding: 40px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        font-size: 1.2em;
+        opacity: 0.9;
+      }
+
+      .content {
+        padding: 40px;
+      }
+
+      .demo-section {
+        margin-bottom: 40px;
+        padding: 30px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border-left: 5px solid #3498db;
+      }
+
+      .demo-section h2 {
+        color: #2c3e50;
+        margin-bottom: 20px;
+        font-size: 1.8em;
+      }
+
+      .demo-form {
+        display: grid;
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+
+      label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #555;
+      }
+
+      input,
+      textarea,
+      select {
+        padding: 12px;
+        border: 2px solid #e1e8ed;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s ease;
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: #3498db;
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 100px;
+        font-family: "Courier New", monospace;
+      }
+
+      .btn {
+        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+        color: white;
+        border: none;
+        padding: 15px 30px;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+      }
+
+      .response-container {
+        margin-top: 20px;
+        padding: 20px;
+        background: #2c3e50;
+        border-radius: 8px;
+        color: #ecf0f1;
+        font-family: "Courier New", monospace;
+        white-space: pre-wrap;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .status-success {
+        color: #27ae60;
+      }
+
+      .status-error {
+        color: #e74c3c;
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        margin: 40px 0;
+      }
+
+      .feature-card {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        transition: transform 0.3s ease;
+      }
+
+      .feature-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .feature-icon {
+        font-size: 3em;
+        margin-bottom: 20px;
+      }
+
+      .feature-card h3 {
+        color: #2c3e50;
+        margin-bottom: 15px;
+      }
+
+      .code-block {
+        background: #2c3e50;
+        color: #ecf0f1;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+        font-family: "Courier New", monospace;
+        overflow-x: auto;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .spinner {
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #3498db;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .footer {
+        background: #2c3e50;
+        color: white;
+        text-align: center;
+        padding: 30px;
+      }
+
+      @media (max-width: 768px) {
+        .form-row {
+          grid-template-columns: 1fr;
+        }
+
+        .header h1 {
+          font-size: 2em;
+        }
+
+        .content {
+          padding: 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🚀 HTTP Server from Scratch</h1>
+        <p>A complete HTTP/1.1 server built from TCP sockets in TypeScript</p>
+      </div>
+
+      <div class="content">
+        <!-- Features Overview -->
+        <div class="features">
+          <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Built from Scratch</h3>
+            <p>
+              No frameworks used - pure TCP socket implementation with HTTP/1.1
+              protocol support
+            </p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <h3>Echo Server</h3>
+            <p>
+              Test the /echo endpoint that returns exactly what you send to it
+            </p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>Full HTTP Support</h3>
+            <p>
+              Headers, status codes, keep-alive connections, and proper error
+              handling
+            </p>
+          </div>
+        </div>
+
+        <!-- Demo Section 1: Basic GET Request -->
+        <div class="demo-section">
+          <h2>🌐 Basic GET Request</h2>
+          <p>
+            Test the basic functionality of the HTTP server with a simple GET
+            request.
+          </p>
+
+          <div class="demo-form">
+            <div class="form-group">
+              <label for="get-path">Request Path:</label>
+              <input
+                type="text"
+                id="get-path"
+                value="/"
+                placeholder="Enter path (e.g., /, /test, /hello)"
+              />
+            </div>
+            <button class="btn" onclick="testGetRequest()">
+              Send GET Request
+            </button>
+          </div>
+
+          <div class="loading" id="get-loading">
+            <div class="spinner"></div>
+            <p>Sending request...</p>
+          </div>
+
+          <div
+            class="response-container"
+            id="get-response"
+            style="display: none"
+          ></div>
+        </div>
+
+        <!-- Demo Section 2: Echo Server -->
+        <div class="demo-section">
+          <h2>🔄 Echo Server Test</h2>
+          <p>
+            Send data to the /echo endpoint and see it returned exactly as sent.
+          </p>
+
+          <div class="demo-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="echo-method">HTTP Method:</label>
+                <select id="echo-method">
+                  <option value="POST">POST</option>
+                  <option value="PUT">PUT</option>
+                  <option value="PATCH">PATCH</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="echo-content-type">Content-Type:</label>
+                <select id="echo-content-type">
+                  <option value="text/plain">text/plain</option>
+                  <option value="application/json">application/json</option>
+                  <option value="application/xml">application/xml</option>
+                  <option value="text/html">text/html</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="echo-data">Request Body:</label>
+              <textarea id="echo-data" placeholder="Enter your data here...">
+{"message": "Hello from the HTTP server!", "timestamp": "2025-01-01T00:00:00Z"}</textarea
+              >
+            </div>
+            <button class="btn" onclick="testEchoServer()">
+              Send to Echo Server
+            </button>
+          </div>
+
+          <div class="loading" id="echo-loading">
+            <div class="spinner"></div>
+            <p>Sending request...</p>
+          </div>
+
+          <div
+            class="response-container"
+            id="echo-response"
+            style="display: none"
+          ></div>
+        </div>
+
+        <!-- Demo Section 3: Custom Headers -->
+        <div class="demo-section">
+          <h2>📋 Custom Headers Test</h2>
+          <p>
+            Test the server's ability to handle custom headers and see them
+            reflected in the response.
+          </p>
+
+          <div class="demo-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="header-name">Custom Header Name:</label>
+                <input
+                  type="text"
+                  id="header-name"
+                  value="X-Custom-Header"
+                  placeholder="e.g., X-API-Key"
+                />
+              </div>
+              <div class="form-group">
+                <label for="header-value">Header Value:</label>
+                <input
+                  type="text"
+                  id="header-value"
+                  value="test-value-123"
+                  placeholder="e.g., your-api-key"
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="header-data">Request Body (optional):</label>
+              <textarea id="header-data" placeholder="Optional request body...">
+Testing custom headers with the HTTP server</textarea
+              >
+            </div>
+            <button class="btn" onclick="testCustomHeaders()">
+              Send with Custom Headers
+            </button>
+          </div>
+
+          <div class="loading" id="header-loading">
+            <div class="spinner"></div>
+            <p>Sending request...</p>
+          </div>
+
+          <div
+            class="response-container"
+            id="header-response"
+            style="display: none"
+          ></div>
+        </div>
+
+        <!-- Code Examples -->
+        <div class="demo-section">
+          <h2>💻 API Examples</h2>
+          <p>
+            Here are some example curl commands you can use to test the server:
+          </p>
+
+          <div class="code-block">
+            # Basic GET request curl http://127.0.0.1:3000/ # Echo server with
+            POST data curl -X POST http://127.0.0.1:3000/echo -d "Hello World" #
+            Echo with JSON data curl -X POST http://127.0.0.1:3000/echo \ -H
+            "Content-Type: application/json" \ -d '{"message": "Hello from
+            curl", "id": 123}' # Echo with custom headers curl -X POST
+            http://127.0.0.1:3000/echo \ -H "X-Custom-Header: my-value" \ -H
+            "Content-Type: text/plain" \ -d "Testing custom headers" # Verbose
+            output to see all headers curl -v http://127.0.0.1:3000/echo -d
+            "verbose test"
+          </div>
+        </div>
+
+        <!-- Server Information -->
+        <div class="demo-section">
+          <h2>ℹ️ Server Information</h2>
+          <p><strong>Server URL:</strong> <code>http://127.0.0.1:3000</code></p>
+          <p><strong>Protocol:</strong> HTTP/1.1</p>
+          <p>
+            <strong>Implementation:</strong> Built from scratch using Node.js
+            TCP sockets
+          </p>
+          <p><strong>Features:</strong></p>
+          <ul style="margin-left: 20px; margin-top: 10px">
+            <li>✅ Dynamic buffer management</li>
+            <li>✅ Promise-based socket API</li>
+            <li>✅ HTTP header parsing and validation</li>
+            <li>✅ Keep-alive connections</li>
+            <li>✅ Proper error handling</li>
+            <li>✅ Streaming request body processing</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>
+          Built with ❤️ to demonstrate low-level HTTP protocol implementation
+        </p>
+        <p>
+          GitHub:
+          <a href="#" style="color: #3498db">HTTP Server from Scratch</a>
+        </p>
+      </div>
+    </div>
+
+    <script>
+      const BASE_URL = "http://127.0.0.1:3000";
+
+      function showLoading(loadingId) {
+        document.getElementById(loadingId).style.display = "block";
+      }
+
+      function hideLoading(loadingId) {
+        document.getElementById(loadingId).style.display = "none";
+      }
+
+      function showResponse(responseId, content, isError = false) {
+        const responseEl = document.getElementById(responseId);
+        responseEl.textContent = content;
+        responseEl.style.display = "block";
+        responseEl.className = isError
+          ? "response-container status-error"
+          : "response-container status-success";
+      }
+
+      async function testGetRequest() {
+        const path = document.getElementById("get-path").value;
+        const url = BASE_URL + path;
+
+        showLoading("get-loading");
+
+        try {
+          const startTime = Date.now();
+          const response = await fetch(url, {
+            method: "GET",
+            cache: "no-cache",
+          });
+
+          const endTime = Date.now();
+          const responseTime = endTime - startTime;
+
+          const responseText = await response.text();
+          const headers = Array.from(response.headers.entries())
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n");
+
+          const result = `Status: ${response.status} ${response.statusText}
+Response Time: ${responseTime}ms
+URL: ${url}
+
+Headers:
+${headers}
+
+Body:
+${responseText}`;
+
+          showResponse("get-response", result);
+        } catch (error) {
+          showResponse("get-response", `Error: ${error.message}`, true);
+        } finally {
+          hideLoading("get-loading");
+        }
+      }
+
+      async function testEchoServer() {
+        const method = document.getElementById("echo-method").value;
+        const contentType = document.getElementById("echo-content-type").value;
+        const data = document.getElementById("echo-data").value;
+
+        showLoading("echo-loading");
+
+        try {
+          const startTime = Date.now();
+          const response = await fetch(BASE_URL + "/echo", {
+            method: method,
+            headers: {
+              "Content-Type": contentType,
+            },
+            body: data,
+            cache: "no-cache",
+          });
+
+          const endTime = Date.now();
+          const responseTime = endTime - startTime;
+
+          const responseText = await response.text();
+          const headers = Array.from(response.headers.entries())
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n");
+
+          const result = `Status: ${response.status} ${response.statusText}
+Response Time: ${responseTime}ms
+Method: ${method}
+Content-Type: ${contentType}
+
+Request Body:
+${data}
+
+Response Headers:
+${headers}
+
+Response Body:
+${responseText}`;
+
+          showResponse("echo-response", result);
+        } catch (error) {
+          showResponse("echo-response", `Error: ${error.message}`, true);
+        } finally {
+          hideLoading("echo-loading");
+        }
+      }
+
+      async function testCustomHeaders() {
+        const headerName = document.getElementById("header-name").value;
+        const headerValue = document.getElementById("header-value").value;
+        const data = document.getElementById("header-data").value;
+
+        showLoading("header-loading");
+
+        try {
+          const headers = {
+            "Content-Type": "text/plain",
+          };
+
+          if (headerName && headerValue) {
+            headers[headerName] = headerValue;
+          }
+
+          const startTime = Date.now();
+          const response = await fetch(BASE_URL + "/echo", {
+            method: "POST",
+            headers: headers,
+            body: data,
+            cache: "no-cache",
+          });
+
+          const endTime = Date.now();
+          const responseTime = endTime - startTime;
+
+          const responseText = await response.text();
+          const responseHeaders = Array.from(response.headers.entries())
+            .map(([key, value]) => `${key}: ${value}`)
+            .join("\n");
+
+          const result = `Status: ${response.status} ${response.statusText}
+Response Time: ${responseTime}ms
+
+Request Headers:
+Content-Type: text/plain${
+            headerName && headerValue ? `\n${headerName}: ${headerValue}` : ""
+          }
+
+Request Body:
+${data}
+
+Response Headers:
+${responseHeaders}
+
+Response Body:
+${responseText}`;
+
+          showResponse("header-response", result);
+        } catch (error) {
+          showResponse("header-response", `Error: ${error.message}`, true);
+        } finally {
+          hideLoading("header-loading");
+        }
+      }
+
+      // Test connectivity on page load
+      window.addEventListener("load", async () => {
+        try {
+          const response = await fetch(BASE_URL + "/", {
+            method: "HEAD",
+            cache: "no-cache",
+          });
+          if (response.ok) {
+            console.log("✅ Server is running and accessible");
+          } else {
+            console.warn(
+              "⚠️ Server responded but with status:",
+              response.status
+            );
+          }
+        } catch (error) {
+          console.error("❌ Cannot connect to server:", error.message);
+          alert(
+            "Cannot connect to the HTTP server. Please make sure it's running on http://127.0.0.1:3000"
+          );
+        }
+      });
+    </script>
+  </body>
+</html>
