@@ -1,19 +1,30 @@
 {
   "devDependencies": {
-    "@types/node": "^24.0.7"
+    "@types/node": "^24.0.7",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
   },
   "name": "web-server",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "http-server-clean.ts",
   "dependencies": {
     "undici-types": "^7.8.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start":"npx ts-node http-server-clean.ts"
+    "start": "npx ts-node http-server-clean.ts",
+    "dev": "npx ts-node http-server-clean.ts",
+    "build": "npx tsc http-server-clean.ts"
   },
-  "keywords": [],
-  "author": "",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "http-server",
+    "node",
+    "typescript"
+  ],
+  "author": "Yuvraj",
   "license": "ISC",
-  "description": ""
+  "description": "Custom HTTP server with demo interface"
 }
