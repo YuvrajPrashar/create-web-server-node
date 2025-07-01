@@ -463,9 +463,10 @@ Testing custom headers with the HTTP server</textarea
     </div>
 
     <script>
-      const port = process.env.PORT || 3000; 
-      const host = "0.0.0.0";
-      const BASE_URL = `http://${host}:${port}`;
+     const host = window.location.hostname; // Dynamically get the client's current hostname
+     const port = window.location.port || 3000; // Use the current port or default to 3000
+     const BASE_URL = `http://${host}:${port}`;
+
 
       function showLoading(loadingId) {
         document.getElementById(loadingId).style.display = "block";
