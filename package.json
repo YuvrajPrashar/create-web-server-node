@@ -12,7 +12,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npx ts-node http-server-scratch.ts",
     "dev": "npx ts-node http-server-scratch.ts",
-    "build": "npx tsc hhttp-server-scratch.ts"
+    "build": "npx tsc http-server-scratch.ts"
   },
   "engines": {
     "node": ">=18.0.0"
