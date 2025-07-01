@@ -557,7 +557,7 @@ const server = net.createServer({
 server.on("connection", newConn);
 
 const port = process.env.PORT || 3000; 
-const host = "0.0.0.0"; 
+const host = process.env.PORT || "0.0.0.0"; 
 
 // Step 13: Start listening on specified host and port
 server.listen({ host, port }, () => {
