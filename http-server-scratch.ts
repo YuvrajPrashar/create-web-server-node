@@ -556,15 +556,12 @@ const server = net.createServer({
 // Step 12: Set up connection handler
 server.on("connection", newConn);
 
-const port = process.env.PORT || 3000; 
-const host = "127.0.0.1"; 
+const port = 3000; 
+const host = "0.0.0.0"; 
 
 // Step 13: Start listening on specified host and port
 server.listen({ host, port }, () => {
   console.log(`HTTP Server listening on http://${host}:${port}`);
-  console.log("Try:");
-  console.log(`  curl http://${host}:${port}/`);
-  console.log(`  curl http://${host}:${port}/echo -d 'Hello World'`);
 });
 
 // Step 14: Handle server errors
